@@ -19,8 +19,8 @@ spec:
     spec:
       containers:
         - name: postgresql
-          image: "postgres:17"  # Adjust version if necessary
-          imagePullPolicy: IfNotPresent
+          image: "docker.io/library/postgres:17"
+          imagePullPolicy: Never
           env:
             - name: POSTGRES_USER
               value: {{ .Values.springbootPostgresql.user }}

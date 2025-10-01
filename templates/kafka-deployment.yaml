@@ -1,0 +1,57 @@
+{{- if .Values.kafka.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "loyalty-platform-v1.fullname" . }}-kafka
+  labels:
+    app: kafka
+spec:
+  replicas: {{ .Values.kafka.replicaCount }}
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+        - name: kafka
+          image: "{{ .Values.kafka.image.repository }}:{{ .Values.kafka.image.tag }}"
+          imagePullPolicy: {{ .Values.kafka.image.pullPolicy }}
+          ports:
+            - containerPort: 9092
+              name: kafka
+          env:
+            - name: KAFKA_BROKER_ID
+              value: "1"
+            - name: KAFKA_ZOOKEEPER_CONNECT
+              value: "{{ include "loyalty-platform-v1.fullname" . }}-zookeeper:2181"
+            - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+              value: "PLAINTEXT:PLAINTEXT"
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: "PLAINTEXT://{{ include "loyalty-platform-v1.fullname" . }}-kafka:9092"
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "1"
+            - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+              value: "1"
+            - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+              value: "1"
+            - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+              value: "true"
+            - name: KAFKA_LOG_RETENTION_HOURS
+              value: "168"
+            - name: KAFKA_LOG_SEGMENT_BYTES
+              value: "1073741824"
+            - name: KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS
+              value: "300000"
+            - name: KAFKA_NUM_PARTITIONS
+              value: "1"
+          volumeMounts:
+            - name: kafka-data
+              mountPath: /var/lib/kafka/data
+      volumes:
+        - name: kafka-data
+          persistentVolumeClaim:
+            claimName: {{ include "loyalty-platform-v1.fullname" . }}-kafka-pvc
+{{- end }}

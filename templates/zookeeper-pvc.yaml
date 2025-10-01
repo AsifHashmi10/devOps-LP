@@ -1,0 +1,15 @@
+{{- if .Values.zookeeper.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "loyalty-platform-v1.fullname" . }}-zookeeper-pvc
+  labels:
+    app: zookeeper
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.zookeeper.persistence.size }}
+  storageClassName: standard
+{{- end }}

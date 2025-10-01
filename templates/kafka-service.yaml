@@ -1,0 +1,17 @@
+{{- if .Values.kafka.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "loyalty-platform-v1.fullname" . }}-kafka
+  labels:
+    app: kafka
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9092
+      targetPort: 9092
+      protocol: TCP
+      name: kafka
+  selector:
+    app: kafka
+{{- end }}

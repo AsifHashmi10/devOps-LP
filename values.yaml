@@ -2,6 +2,10 @@
 zookeeper:
   enabled: true
   replicaCount: 1
+  image:
+    repository: docker.io/library/zookeeper
+    tag: "3.8.4"
+    pullPolicy: Never
   persistence:
     enabled: true
     size: 1Gi
@@ -12,6 +16,10 @@ zookeeper:
 kafka:
   enabled: true
   replicaCount: 1
+  image:
+    repository: docker.io/apache/kafka
+    tag: "3.7.0"
+    pullPolicy: Never
   listeners:
     client:
       protocol: PLAINTEXT
@@ -49,9 +57,9 @@ nginx:
   replicaCount: 1
 
   image:
-    repository: nginx
+    repository: docker.io/library/nginx
     tag: "stable-alpine"
-    pullPolicy: IfNotPresent
+    pullPolicy: Never
 
   imagePullSecrets: []
 
@@ -134,7 +142,7 @@ keycloak:
   image:
     repository: docker.io/keycloak/keycloak
     tag: "26.0.2"
-    pullPolicy: IfNotPresent
+    pullPolicy: Never
 
   adminUser: lpkcadmin
   adminPassword: lpmanage
@@ -145,7 +153,8 @@ keycloak:
 
   database:
     enabled: true
-    image: postgres:17
+    image: docker.io/library/postgres:17
+    pullPolicy: Never
     user: lpkcpguser
     password: lpmanage
     name: keycloak-db
@@ -162,7 +171,8 @@ keycloak:
 
   initContainers:
     - name: wait-for-db
-      image: busybox:1.36
+      image: docker.io/library/busybox:1.36
+      imagePullPolicy: Never
       command:
         - sh
         - -c
@@ -261,9 +271,9 @@ configServer:
   replicaCount: 1
 
   image:
-    repository: loyalty-config-server-app
+    repository: docker.io/library/loyalty-config-server-app
     tag: latest
-    pullPolicy: IfNotPresent
+    pullPolicy: Never
 
   database:
     enabled: true

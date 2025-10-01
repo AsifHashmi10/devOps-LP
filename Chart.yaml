@@ -5,15 +5,19 @@ type: application
 version: 0.1.0
 appVersion: "1.0"
 
-dependencies:
-  - name: zookeeper
-    version: "12.3.3"
-    repository: "https://charts.bitnami.com/bitnami"
+# Dependencies disabled - using local images instead of external charts
+# dependencies:
+#   - name: zookeeper
+#     version: "12.3.3"
+#     repository: "https://charts.bitnami.com/bitnami"
+#     condition: false
 
-  - name: kafka
-    version: "30.1.4"
-    repository: "https://charts.bitnami.com/bitnami"
+#   - name: kafka
+#     version: "30.1.4"
+#     repository: "https://charts.bitnami.com/bitnami"
+#     condition: false
 
-  - name: postgresql
-    version: "15.5.26" # check latest: helm search repo postgresql
-    repository: "https://charts.bitnami.com/bitnami"
+#   - name: postgresql
+#     version: "15.5.26" # check latest: helm search repo postgresql
+#     repository: "https://charts.bitnami.com/bitnami"
+#     condition: false

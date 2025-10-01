@@ -1,0 +1,64 @@
+{{- if .Values.zookeeper.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "loyalty-platform-v1.fullname" . }}-zookeeper
+  labels:
+    app: zookeeper
+spec:
+  replicas: {{ .Values.zookeeper.replicaCount }}
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+    spec:
+      containers:
+        - name: zookeeper
+          image: "{{ .Values.zookeeper.image.repository }}:{{ .Values.zookeeper.image.tag }}"
+          imagePullPolicy: {{ .Values.zookeeper.image.pullPolicy }}
+          ports:
+            - containerPort: 2181
+              name: client
+            - containerPort: 2888
+              name: server
+            - containerPort: 3888
+              name: leader-election
+          env:
+            - name: ZOO_MY_ID
+              value: "1"
+            - name: ZOO_SERVERS
+              value: "server.1=0.0.0.0:2888:3888;2181"
+            - name: ZOO_TICK_TIME
+              value: "2000"
+            - name: ZOO_INIT_LIMIT
+              value: "5"
+            - name: ZOO_SYNC_LIMIT
+              value: "2"
+            - name: ZOO_AUTOPURGE_PURGEINTERVAL
+              value: "0"
+            - name: ZOO_AUTOPURGE_SNAPRETAINCOUNT
+              value: "3"
+            - name: ZOO_MAX_CLIENT_CNXNS
+              value: "60"
+            - name: ZOO_STANDALONE_ENABLED
+              value: "true"
+            - name: ZOO_ADMINSERVER_ENABLED
+              value: "true"
+          volumeMounts:
+            - name: zookeeper-data
+              mountPath: /data
+              subPath: ""
+            - name: zookeeper-logs
+              mountPath: /datalog
+              subPath: ""
+      volumes:
+        - name: zookeeper-data
+          persistentVolumeClaim:
+            claimName: {{ include "loyalty-platform-v1.fullname" . }}-zookeeper-pvc
+        - name: zookeeper-logs
+          persistentVolumeClaim:
+            claimName: {{ include "loyalty-platform-v1.fullname" . }}-zookeeper-pvc
+{{- end }}
