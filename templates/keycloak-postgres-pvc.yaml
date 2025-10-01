@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "loyalty-platform-v1.fullname" . }}-keycloak-postgres-pvc
+  labels:
+    app.kubernetes.io/name: {{ include "loyalty-platform-v1.name" . }}
+    app.kubernetes.io/component: keycloak-postgres
+spec:
+  accessModes:
+    - {{ .Values.keycloak.database.storage.accessMode | default "ReadWriteOnce" }}
+  resources:
+    requests:
+      storage: {{ .Values.keycloak.database.storage.size | default "1Gi" }}
+  storageClassName: {{ .Values.keycloak.database.storage.storageClassName | default "standard" | quote }}
+  volumeName: {{ include "loyalty-platform-v1.fullname" . }}-keycloak-postgres-pv  # Bind to the PV above

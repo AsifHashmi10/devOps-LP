@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "loyalty-platform-v1.springboot-postgresql.fullname" . }}-pv
+  labels:
+    app: {{ include "loyalty-platform-v1.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  capacity:
+    storage: {{ .Values.springbootPostgresql.storage.size }}
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain   # Retain policy
+  storageClassName: {{ .Values.springbootPostgresql.storage.storageClassName }}
+  volumeMode: Filesystem
+  hostPath:
+    path: /mnt/data/{{ .Release.Name }}/springboot-postgresql
+    type: DirectoryOrCreate

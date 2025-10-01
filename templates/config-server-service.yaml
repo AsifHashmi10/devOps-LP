@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "loyalty-platform-v1.config-server.fullname" . }}
+  labels:
+    app: loyalty-config-server
+spec:
+  selector:
+    app: loyalty-config-server
+  ports:
+    - name: http
+      port: 8888
+      targetPort: 8888
+  type: ClusterIP

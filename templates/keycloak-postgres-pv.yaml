@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "loyalty-platform-v1.fullname" . }}-keycloak-postgres-pv
+  labels:
+    app.kubernetes.io/name: {{ include "loyalty-platform-v1.name" . }}
+    app.kubernetes.io/component: keycloak-postgres
+spec:
+  capacity:
+    storage: {{ .Values.keycloak.database.storage.size | default "1Gi" }}
+  accessModes:
+    - {{ .Values.keycloak.database.storage.accessMode | default "ReadWriteOnce" }}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .Values.keycloak.database.storage.storageClassName | default "standard" | quote }}
+  hostPath:
+    path: /mnt/data/keycloak-postgres  # Or change to your desired path

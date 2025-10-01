@@ -1,0 +1,72 @@
+{{- if .Values.keycloak.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "loyalty-platform-v1.fullname" . }}-keycloak-postgres
+  labels:
+    app.kubernetes.io/name: {{ include "loyalty-platform-v1.name" . }}
+    app.kubernetes.io/component: keycloak-postgres
+spec:
+  serviceName: {{ include "loyalty-platform-v1.fullname" . }}-keycloak-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "loyalty-platform-v1.name" . }}
+      app.kubernetes.io/component: keycloak-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "loyalty-platform-v1.name" . }}
+        app.kubernetes.io/component: keycloak-postgres
+    spec:
+      containers:
+        - name: keycloak-postgres
+          image: {{ .Values.keycloak.database.image }}
+          imagePullPolicy: {{ .Values.keycloak.database.pullPolicy | default "IfNotPresent" }}
+          env:
+            - name: POSTGRES_USER
+              value: "{{ .Values.keycloak.database.user }}"
+            - name: POSTGRES_PASSWORD
+              value: "{{ .Values.keycloak.database.password }}"
+            - name: POSTGRES_DB
+              value: "{{ .Values.keycloak.database.name }}"
+          ports:
+            - containerPort: {{ .Values.keycloak.database.port }}
+              name: postgres
+          volumeMounts:
+            - name: postgres-data
+              mountPath: {{ .Values.keycloak.database.storage.mountPath | default "/var/lib/postgresql/data" }}
+
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+        labels:
+          app.kubernetes.io/name: {{ include "loyalty-platform-v1.name" . }}
+          app.kubernetes.io/component: keycloak-postgres
+      spec:
+        accessModes:
+          - {{ .Values.keycloak.database.storage.accessMode | default "ReadWriteOnce" }}
+        resources:
+          requests:
+            storage: {{ .Values.keycloak.database.storage.size | default "1Gi" }}
+        storageClassName: {{ .Values.keycloak.database.storage.storageClassName | quote | default "standard" }}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "loyalty-platform-v1.fullname" . }}-keycloak-postgres
+  labels:
+    app.kubernetes.io/name: {{ include "loyalty-platform-v1.name" . }}
+    app.kubernetes.io/component: keycloak-postgres
+spec:
+  selector:
+    app.kubernetes.io/name: {{ include "loyalty-platform-v1.name" . }}
+    app.kubernetes.io/component: keycloak-postgres
+  ports:
+    - protocol: TCP
+      port: {{ .Values.keycloak.database.port }}
+      targetPort: {{ .Values.keycloak.database.port }}
+  type: ClusterIP
+{{- end }}

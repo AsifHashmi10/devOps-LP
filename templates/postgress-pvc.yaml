@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "loyalty-platform-v1.springboot-postgresql.fullname" . }}-pvc
+  labels:
+    app: {{ include "loyalty-platform-v1.name" . }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.springbootPostgresql.storage.size }}
+  storageClassName: {{ .Values.springbootPostgresql.storage.storageClassName }}
+  volumeName: {{ include "loyalty-platform-v1.springboot-postgresql.fullname" . }}-pv  # Link to the PV

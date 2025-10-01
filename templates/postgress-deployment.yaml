@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "loyalty-platform-v1.springboot-postgresql.fullname" . }}
+  labels:
+    app: {{ include "loyalty-platform-v1.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "loyalty-platform-v1.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "loyalty-platform-v1.name" . }}
+    spec:
+      containers:
+        - name: postgresql
+          image: "postgres:17"  # Adjust version if necessary
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.springbootPostgresql.user }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.springbootPostgresql.password }}
+            - name: POSTGRES_DB
+              value: {{ .Values.springbootPostgresql.name }}
+          ports:
+            - name: postgresql
+              containerPort: 5432
+              protocol: TCP
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: config-volume
+              mountPath: /etc/postgresql/postgresql.conf  # Mounting the file directly into /etc/postgresql/postgresql.conf
+              subPath: postgresql.conf  # Ensuring only the postgresql.conf file is mounted
+            - name: init-volume
+              mountPath: /docker-entrypoint-initdb.d/  # Mounting init scripts to be executed
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: {{ include "loyalty-platform-v1.springboot-postgresql.fullname" . }}-pvc
+        - name: config-volume
+          configMap:
+            name: {{ include "loyalty-platform-v1.springboot-postgresql.fullname" . }}-configmap
+        - name: init-volume
+          configMap:
+            name: {{ include "loyalty-platform-v1.springboot-postgresql.fullname" . }}-configmap

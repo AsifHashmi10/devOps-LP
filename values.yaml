@@ -1,0 +1,301 @@
+# Zookeeper Configuration
+zookeeper:
+  enabled: true
+  replicaCount: 1
+  persistence:
+    enabled: true
+    size: 1Gi
+  auth:
+    enabled: false
+
+# Kafka Configuration
+kafka:
+  enabled: true
+  replicaCount: 1
+  listeners:
+    client:
+      protocol: PLAINTEXT
+    interbroker:
+      protocol: PLAINTEXT
+  auth:
+    clientProtocol: PLAINTEXT
+    interBrokerProtocol: PLAINTEXT
+
+  zookeeper:
+    enabled: false
+    address: "{{ .Release.Name }}-zookeeper"
+
+  persistence:
+    enabled: true
+    type: hostPath
+    hostPath:
+      path: /mnt/data/kafka
+      type: DirectoryOrCreate
+    mountPath: /bitnami/kafka
+    size: 1Gi
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+
+# NGINX Webserver Configuration
+nginx:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: nginx
+    tag: "stable-alpine"
+    pullPolicy: IfNotPresent
+
+  imagePullSecrets: []
+
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /
+      cert-manager.io/cluster-issuer: "dev-ca-issuer"
+    hosts:
+      - host: loyaltyplatform.test
+        paths:
+          - path: /webserver
+            pathType: Prefix
+            backend:
+              service:
+                name: loyalty-platform-v1-webserver
+                port:
+                  number: 80
+    tls:
+      - hosts:
+          - loyaltyplatform.test
+        secretName: nginx-loyaltyplatform-tls
+
+  persistence:
+    enabled: true
+    type: pvc
+    storageClass: standard
+    mountPath: /usr/share/nginx/html
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    annotations: {}
+    hostPath:
+      path: /mnt/data/webserver
+      type: DirectoryOrCreate
+
+  service:
+    type: ClusterIP
+    port: 80
+    nodePort: null
+    annotations: {}
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+
+# Keycloak Configuration
+keycloak:
+  enabled: true
+  replicas: 1
+
+  image:
+    repository: docker.io/keycloak/keycloak
+    tag: "26.0.2"
+    pullPolicy: IfNotPresent
+
+  adminUser: lpkcadmin
+  adminPassword: lpmanage
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  database:
+    enabled: true
+    image: postgres:17
+    user: lpkcpguser
+    password: lpmanage
+    name: keycloak-db
+    host: loyalty-platform-v1-keycloak-postgres
+    port: 5432
+    storage:
+      enabled: true
+      type: pvc
+      pvc:
+        accessMode: ReadWriteOnce
+        size: 1Gi
+        storageClassName: standard
+      mountPath: "/var/lib/postgresql/data"
+
+  initContainers:
+    - name: wait-for-db
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          echo "Waiting for Postgres..."
+          until nc -z -v -w30 loyalty-platform-v1-keycloak-postgres 5432; do
+            echo "Database is unavailable - sleeping"
+            sleep 5
+          done
+          echo "Database is up - continuing"
+      resources:
+        limits:
+          cpu: 50m
+          memory: 50Mi
+        requests:
+          cpu: 10m
+          memory: 20Mi
+
+  args:
+    - start-dev
+    - --http-port=8080
+    - --hostname-strict=false
+    - --http-relative-path=/auth
+    - --proxy-headers=xforwarded
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1
+      memory: 2Gi
+
+  readinessProbe:
+    httpGet:
+      path: /auth/realms/master
+      port: http
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  livenessProbe:
+    httpGet:
+      path: /auth/realms/master
+      port: http
+    initialDelaySeconds: 90
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/x-forwarded-prefix: "/auth"
+      cert-manager.io/cluster-issuer: "dev-ca-issuer"
+    hosts:
+      - host: loyaltyplatform.test
+        paths:
+          - path: /auth
+            pathType: Prefix
+    tls:
+      - hosts:
+          - loyaltyplatform.test
+        secretName: keycloak-loyaltyplatform-tls
+
+# PostgreSQL Configuration for Spring Boot application
+springbootPostgresql:
+  enabled: true
+  user: lpuser
+  password: lpmanage
+  name: springboot_db
+  host: loyalty-platform-v1-springboot-postgresql
+  port: 5432
+
+  storage:
+    enabled: true
+    size: 5Gi
+    storageClassName: standard
+
+  persistence:
+    enabled: true
+    type: pvc
+    accessMode: ReadWriteOnce
+    storageClass: standard
+    size: 5Gi
+    mountPath: /var/lib/postgresql/data
+
+
+# Config Server Configuration
+configServer:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: loyalty-config-server-app
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  database:
+    enabled: true
+    user: lpuser
+    password: lpmanage
+    name: springboot_db
+    host: loyalty-platform-v1-springboot-postgresql
+    port: 5432
+
+  persistence:
+    enabled: true
+    type: pvc
+    storageClass: standard
+    size: 5Gi
+    mountPath: /config
+
+  service:
+    port: 8888        # Service port exposed inside the cluster
+    targetPort: 8888  # Actual port your app listens on inside the container
+
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /
+      cert-manager.io/cluster-issuer: "dev-ca-issuer"
+    hosts:
+      - host: loyaltyplatform.test
+        paths:
+          - path: /config
+            pathType: Prefix
+    tls:
+      - hosts:
+          - loyaltyplatform.test
+        secretName: configserver-loyaltyplatform-tls

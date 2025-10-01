@@ -1,0 +1,33 @@
+{{- if .Values.keycloak.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "loyalty-platform-v1.fullname" . }}-keycloak
+  labels:
+    app: keycloak
+  annotations:
+    {{- with .Values.keycloak.ingress.annotations }}
+    {{ toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.keycloak.ingress.className | quote }}
+  rules:
+    {{- range .Values.keycloak.ingress.hosts }}
+    - host: {{ .host }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ include "loyalty-platform-v1.fullname" $ }}-keycloak
+                port:
+                  number: {{ $.Values.keycloak.service.port }}
+          {{- end }}
+    {{- end }}
+  {{- if .Values.keycloak.ingress.tls }}
+  tls:
+    {{- toYaml .Values.keycloak.ingress.tls | nindent 4 }}
+  {{- end }}
+{{- end }}

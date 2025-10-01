@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "loyalty-platform-v1.springboot-postgresql.fullname" . }}-configmap
+  labels:
+    app: {{ include "loyalty-platform-v1.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  # Custom PostgreSQL configuration file (postgresql.conf)
+  postgresql.conf: |
+    # Example custom PostgreSQL configuration
+    max_connections = 100
+    shared_buffers = 256MB
+    work_mem = 4MB
+    maintenance_work_mem = 64MB
+    effective_cache_size = 768MB
+
+  # Example initialization script for PostgreSQL (init.sql)
+  init.sql: |
+    -- Example initialization script for PostgreSQL (creating a users table)
+    CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );

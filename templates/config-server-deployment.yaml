@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "loyalty-platform-v1.config-server.fullname" . }}
+  labels:
+    app: loyalty-config-server
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.configServer.replicaCount }}
+  selector:
+    matchLabels:
+      app: loyalty-config-server
+  template:
+    metadata:
+      labels:
+        app: loyalty-config-server
+    spec:
+      containers:
+        - name: config-server
+          image: "{{ .Values.configServer.image.repository }}:{{ .Values.configServer.image.tag }}"
+          imagePullPolicy: {{ .Values.configServer.image.pullPolicy }}
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://{{ .Values.configServer.database.host }}:{{ .Values.configServer.database.port }}/{{ .Values.configServer.database.name }}"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: {{ .Values.configServer.database.user }}
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: {{ .Values.configServer.database.password }}
+          ports:
+            - containerPort: 8888
+              name: http
+              protocol: TCP
+          volumeMounts:
+            - name: config-server-data
+              mountPath: /config
+      volumes:
+        - name: config-server-data
+          persistentVolumeClaim:
+            claimName: {{ include "loyalty-platform-v1.config-server.fullname" . }}-pvc

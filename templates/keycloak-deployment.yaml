@@ -1,0 +1,70 @@
+{{- if .Values.keycloak.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "loyalty-platform-v1.fullname" . }}-keycloak
+  labels:
+    app: keycloak
+spec:
+  replicas: {{ .Values.keycloak.replicas }}
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: "{{ .Values.keycloak.image.repository }}:{{ .Values.keycloak.image.tag }}"
+          imagePullPolicy: {{ .Values.keycloak.image.pullPolicy }}
+
+          # ? Use args from values.yaml dynamically
+          args:
+            {{- range .Values.keycloak.args }}
+            - {{ . | quote }}
+            {{- end }}
+
+          env:
+            - name: KEYCLOAK_ADMIN
+              value: {{ .Values.keycloak.adminUser | quote }}
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: {{ .Values.keycloak.adminPassword | quote }}
+            - name: KC_DB
+              value: "postgres"
+            - name: KC_DB_URL_HOST
+              value: "{{ include "loyalty-platform-v1.fullname" . }}-keycloak-postgres"
+            - name: KC_DB_URL_PORT
+              value: "{{ .Values.keycloak.database.port }}"
+            - name: KC_DB_URL_DATABASE
+              value: "{{ .Values.keycloak.database.name }}"
+            - name: KC_DB_USERNAME
+              value: "{{ .Values.keycloak.database.user }}"
+            - name: KC_DB_PASSWORD
+              value: "{{ .Values.keycloak.database.password }}"
+
+          ports:
+            - containerPort: 8080
+              name: http
+
+          readinessProbe:
+            httpGet:
+              path: /auth/realms/master
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /auth/realms/master
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+{{- end }}

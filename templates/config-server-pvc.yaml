@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "loyalty-platform-v1.config-server.fullname" . }}-pvc
+  labels:
+    app: loyalty-config-server
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: {{ .Values.configServer.persistence.storageClass }}
